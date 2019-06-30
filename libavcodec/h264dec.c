@@ -88,7 +88,7 @@ int save_frame_as_jpeg(AVCodecContext *pCodecCtx, AVFrame *pFrame, int FrameNo) 
         return -1;
     }
 
-    sprintf(JPEGFName, "/media/mohamed/8A9CDD219CDD0899/4th/FFmpeg/jpeg/%06d.jpg", FrameNo);
+    sprintf(JPEGFName, "/home/mohamed/FFmpeg/jpeg/%06d.jpg", FrameNo);
     JPEGFile = fopen(JPEGFName, "wb");
     fwrite(packet.data, 1, packet.size, JPEGFile);
     fclose(JPEGFile);
@@ -1082,7 +1082,7 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
                     printf("Could not allocate video frame\n");
 
                 AVFrame* interpolated_frame = h->next_output_pic->f->interpolated_frame;
-
+                printf("KKKK first\n");
                 interpolated_frame->format = avctx->pix_fmt;
                 interpolated_frame->width  = avctx->width;
                 interpolated_frame->height = avctx->height;
@@ -1096,8 +1096,8 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
                 if (ret < 0)
                     printf("Could not make frame data writable\n");
 
-                int DPB_map[16];    // maps frame_num to its index in the DPB array
-                memset(DPB_map, 0, 16 * sizeof(int)); 
+                int DPB_map[32];    // maps frame_num to its index in the DPB array
+                memset(DPB_map, 0, 32 * sizeof(int)); 
                 int DPB_count = 0;
 
                 // loop on the DPB array to fill the DPB map
@@ -1203,14 +1203,14 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
                 // }
 
 
-                int vis[720 /16 * 2][1280 /16 * 2];
-                for(int i = 0; i < h->mb_height*2; i++)
-                    memset(vis[i], 0, h->mb_width*2 * sizeof(int));
+                // int vis[720 /16 * 2][1280 /16 * 2];
+                // for(int i = 0; i < h->mb_height*2; i++)
+                //     memset(vis[i], 0, h->mb_width*2 * sizeof(int));
 
-                int mvss[720 / 16 *2][1280 / 16 *2][2];
-                for(int i = 0; i < h->mb_height*2; i++)
-                    for(int j = 0; j < h->mb_width*2; j++)
-                        memset(mvss[i][j], 0, 2 * sizeof(int));
+                // int mvss[720 / 16 *2][1280 / 16 *2][2];
+                // for(int i = 0; i < h->mb_height*2; i++)
+                //     for(int j = 0; j < h->mb_width*2; j++)
+                //         memset(mvss[i][j], 0, 2 * sizeof(int));
 
                 const int shift = 2;
                 const int scale = 1 << shift;
@@ -1233,6 +1233,8 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
                                 continue;
                             if (IS_8X8(mb_type)) {
                                 for (i = 0; i < 4; i++) {
+                                    //int sx = mb_x * 16 + 4 + 8 * (i & 1);
+                                    //int sy = mb_y * 16 + 4 + 8 * (i >> 1);
                                     int xy = (mb_x * 2 + (i & 1) +
                                               (mb_y * 2 + (i >> 1)) * mv_stride) << (mv_sample_log2 - 1);
                                     int mx = pic->motion_val[direction][xy][0];
@@ -1243,8 +1245,8 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
 
                                     int ref_frame_num = (pic->ref_poc[0][direction][ref_index] - (h->slice_ctx[0].ref_list[direction][ref_index].reference & 3)) / 4;
                                     int ref_frame_index = DPB_map[ref_frame_num];
-                                    int start_x = (mb_x * 16 + 8 * (i & 1))  + mx    /scale;
-                                    int start_y = (mb_y * 16 + 8 * (i >> 1)) + my    /scale;
+                                    int start_x = (mb_x * 16 + 8 * (i & 1))  ;
+                                    int start_y = (mb_y * 16 + 8 * (i >> 1)) ;
                                     int dst_x   = (mb_x * 16 + 8 * (i & 1))  + (mx/2)/scale;
                                     int dst_y   = (mb_y * 16 + 8 * (i >> 1)) + (my/2)/scale;
                                     if(start_x > (h->mb_width * 16) - 8 || start_x < 0) {
@@ -1262,27 +1264,27 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
                                     printf("dst_x %d, dst_y %d\n", dst_x, dst_y);
                                     printf("start_x %d, start_y %d\n", start_x, start_y);
 
-                                    vis[dst_y/8][dst_x/8] = 1;
-                                    mvss[dst_y/8][dst_x/8][0] = mx;
-                                    mvss[dst_y/8][dst_x/8][1] = my;
+                                    // vis[dst_y/8][dst_x/8] = 1;
+                                    // mvss[dst_y/8][dst_x/8][0] = mx;
+                                    // mvss[dst_y/8][dst_x/8][1] = my;
 
                                     int y, x, y_ref, x_ref;
                                     for (y = start_y, y_ref = dst_y; y < start_y + 8; y++, y_ref++) {
                                         for (x = start_x, x_ref = dst_x; x < start_x + 8; x++, x_ref++) {
                                             // Y
                                             interpolated_frame->data[0][y_ref * interpolated_frame->linesize[0] + x_ref]
-                                            = h->DPB[ref_frame_index].f->data[0][y * h->DPB[ref_frame_index].f->linesize[0] + x];
+                                            = pic->f->data[0][y * pic->f->linesize[0] + x];
                                         }
                                     }
                                     for (y = start_y/2, y_ref = dst_y/2; y < start_y/2 + (8/2); y++, y_ref++) {
                                         for (x = start_x/2, x_ref = dst_x/2; x < start_x/2 + (8/2); x++, x_ref++) {
                                             //Cb
                                             interpolated_frame->data[1][y_ref * interpolated_frame->linesize[1] + x_ref]
-                                            = h->DPB[ref_frame_index].f->data[1][y * h->DPB[ref_frame_index].f->linesize[1] + x];
+                                            = pic->f->data[1][y * pic->f->linesize[1] + x];
                                             
                                             //Cr
                                             interpolated_frame->data[2][y_ref * interpolated_frame->linesize[2] + x_ref]
-                                            = h->DPB[ref_frame_index].f->data[2][y * h->DPB[ref_frame_index].f->linesize[2] + x];
+                                            = pic->f->data[2][y * pic->f->linesize[2] + x];
                                         }
                                     }
 
@@ -1302,8 +1304,8 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
                                     
                                     int ref_frame_num = (pic->ref_poc[0][direction][ref_index] - (h->slice_ctx[0].ref_list[direction][ref_index].reference & 3)) / 4;
                                     int ref_frame_index = DPB_map[ref_frame_num];
-                                    int start_x = (mb_x * 16)         + mx    /scale;
-                                    int start_y = (mb_y * 16 + 8 * i) + my    /scale;
+                                    int start_x = (mb_x * 16)         ;
+                                    int start_y = (mb_y * 16 + 8 * i) ;
                                     int dst_x   = (mb_x * 16)         + (mx/2)/scale;
                                     int dst_y   = (mb_y * 16 + 8 * i) + (my/2)/scale;
                                     if(start_x > (h->mb_width * 16) - 16 || start_x < 0) {
@@ -1321,30 +1323,30 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
                                     printf("dst_x %d, dst_y %d\n", dst_x, dst_y);
                                     printf("start_x %d, start_y %d\n", start_x, start_y);
 
-                                    vis[dst_y/8][dst_x/8] = 1;
-                                    vis[dst_y/8][dst_x/8 + 1] = 1;
-                                    mvss[dst_y/8][dst_x/8][0] = mx;
-                                    mvss[dst_y/8][dst_x/8][1] = my;
-                                    mvss[dst_y/8][dst_x/8 + 1][0] = mx;
-                                    mvss[dst_y/8][dst_x/8 + 1][1] = my;
+                                    // vis[dst_y/8][dst_x/8] = 1;
+                                    // vis[dst_y/8][dst_x/8 + 1] = 1;
+                                    // mvss[dst_y/8][dst_x/8][0] = mx;
+                                    // mvss[dst_y/8][dst_x/8][1] = my;
+                                    // mvss[dst_y/8][dst_x/8 + 1][0] = mx;
+                                    // mvss[dst_y/8][dst_x/8 + 1][1] = my;
 
                                     int y, x, y_ref, x_ref;
                                     for (y = start_y, y_ref = dst_y; y < start_y + 8; y++, y_ref++) {
                                         for (x = start_x, x_ref = dst_x; x < start_x + 16; x++, x_ref++) {
                                             // Y
                                             interpolated_frame->data[0][y_ref * interpolated_frame->linesize[0] + x_ref]
-                                            = h->DPB[ref_frame_index].f->data[0][y * h->DPB[ref_frame_index].f->linesize[0] + x];
+                                            = pic->f->data[0][y * pic->f->linesize[0] + x];
                                         }
                                     }
                                     for (y = start_y/2, y_ref = dst_y/2; y < start_y/2 + (8/2); y++, y_ref++) {
                                         for (x = start_x/2, x_ref = dst_x/2; x < start_x/2 + (16/2); x++, x_ref++) {
                                            //Cb
                                             interpolated_frame->data[1][y_ref * interpolated_frame->linesize[1] + x_ref]
-                                            = h->DPB[ref_frame_index].f->data[1][y * h->DPB[ref_frame_index].f->linesize[1] + x];
+                                            = pic->f->data[1][y * pic->f->linesize[1] + x];
                                             
                                             //Cr
                                             interpolated_frame->data[2][y_ref * interpolated_frame->linesize[2] + x_ref]
-                                            = h->DPB[ref_frame_index].f->data[2][y * h->DPB[ref_frame_index].f->linesize[2] + x];
+                                            = pic->f->data[2][y * pic->f->linesize[2] + x];
                                         }
                                     }
 
@@ -1367,8 +1369,8 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
                                     
                                     int ref_frame_num = (pic->ref_poc[0][direction][ref_index] - (h->slice_ctx[0].ref_list[direction][ref_index].reference & 3)) / 4;
                                     int ref_frame_index = DPB_map[ref_frame_num];
-                                    int start_x = (mb_x * 16 + 8 * i) + mx    /scale;
-                                    int start_y = (mb_y * 16)         + my    /scale;
+                                    int start_x = (mb_x * 16 + 8 * i) ;
+                                    int start_y = (mb_y * 16)         ;
                                     int dst_x   = (mb_x * 16 + 8 * i) + (mx/2)/scale;
                                     int dst_y   = (mb_y * 16)         + (my/2)/scale;
                                     if(start_x > (h->mb_width * 16) - 8 || start_x < 0) {
@@ -1386,30 +1388,30 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
                                     printf("dst_x %d, dst_y %d\n", dst_x, dst_y);
                                     printf("start_x %d, start_y %d\n", start_x, start_y);
 
-                                    vis[dst_y/8][dst_x/8] = 1;
-                                    vis[dst_y/8 + 1][dst_x/8] = 1;
-                                    mvss[dst_y/8][dst_x/8][0] = mx;
-                                    mvss[dst_y/8][dst_x/8][1] = my;
-                                    mvss[dst_y/8 + 1][dst_x/8][0] = mx;
-                                    mvss[dst_y/8 + 1][dst_x/8][1] = my;
+                                    // vis[dst_y/8][dst_x/8] = 1;
+                                    // vis[dst_y/8 + 1][dst_x/8] = 1;
+                                    // mvss[dst_y/8][dst_x/8][0] = mx;
+                                    // mvss[dst_y/8][dst_x/8][1] = my;
+                                    // mvss[dst_y/8 + 1][dst_x/8][0] = mx;
+                                    // mvss[dst_y/8 + 1][dst_x/8][1] = my;
 
                                     int y, x, y_ref, x_ref;
                                     for (y = start_y, y_ref = dst_y; y < start_y + 16; y++, y_ref++) {
                                         for (x = start_x, x_ref = dst_x; x < start_x + 8; x++, x_ref++) {
                                             // Y
                                             interpolated_frame->data[0][y_ref * interpolated_frame->linesize[0] + x_ref]
-                                            = h->DPB[ref_frame_index].f->data[0][y * h->DPB[ref_frame_index].f->linesize[0] + x];
+                                            = pic->f->data[0][y * pic->f->linesize[0] + x];
                                         }
                                     }
                                     for (y = start_y/2, y_ref = dst_y/2; y < start_y/2 + (16/2); y++, y_ref++) {
                                         for (x = start_x/2, x_ref = dst_x/2; x < start_x/2 + (8/2); x++, x_ref++) {
                                             //Cb
                                             interpolated_frame->data[1][y_ref * interpolated_frame->linesize[1] + x_ref]
-                                            = h->DPB[ref_frame_index].f->data[1][y * h->DPB[ref_frame_index].f->linesize[1] + x];
+                                            = pic->f->data[1][y * pic->f->linesize[1] + x];
                                             
                                             //Cr
                                             interpolated_frame->data[2][y_ref * interpolated_frame->linesize[2] + x_ref]
-                                            = h->DPB[ref_frame_index].f->data[2][y * h->DPB[ref_frame_index].f->linesize[2] + x];
+                                            = pic->f->data[2][y * pic->f->linesize[2] + x];
                                         }
                                     }
 
@@ -1431,8 +1433,8 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
                                     
                                 int ref_frame_num = (pic->ref_poc[0][direction][ref_index] - (h->slice_ctx[0].ref_list[direction][ref_index].reference & 3)) / 4;
                                 int ref_frame_index = DPB_map[ref_frame_num];
-                                int start_x = (mb_x * 16) + mx    /scale;
-                                int start_y = (mb_y * 16) + my    /scale;
+                                int start_x = (mb_x * 16) ;
+                                int start_y = (mb_y * 16) ;
                                 int dst_x   = (mb_x * 16) + (mx/2)/scale;
                                 int dst_y   = (mb_y * 16) + (my/2)/scale;
                                 if(start_x > (h->mb_width * 16) - 16 || start_x < 0) {
@@ -1450,37 +1452,37 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
                                 printf("dst_x %d, dst_y %d\n", dst_x, dst_y);
                                 printf("start_x %d, start_y %d\n", start_x, start_y);
 
-                                vis[dst_y/8][dst_x/8] = 1;
-                                vis[dst_y/8][dst_x/8 + 1] = 1;
-                                vis[dst_y/8 + 1][dst_x/8] = 1;
-                                vis[dst_y/8 + 1][dst_x/8 + 1] = 1;
+                                // vis[dst_y/8][dst_x/8] = 1;
+                                // vis[dst_y/8][dst_x/8 + 1] = 1;
+                                // vis[dst_y/8 + 1][dst_x/8] = 1;
+                                // vis[dst_y/8 + 1][dst_x/8 + 1] = 1;
 
-                                mvss[dst_y/8][dst_x/8][0] = mx;
-                                mvss[dst_y/8][dst_x/8][1] = my;
-                                mvss[dst_y/8][dst_x/8 + 1][0] = mx;
-                                mvss[dst_y/8][dst_x/8 + 1][1] = my;
-                                mvss[dst_y/8 + 1][dst_x/8][0] = mx;
-                                mvss[dst_y/8 + 1][dst_x/8][1] = my;
-                                mvss[dst_y/8 + 1][dst_x/8 + 1][0] = mx;
-                                mvss[dst_y/8 + 1][dst_x/8 + 1][1] = my;
+                                // mvss[dst_y/8][dst_x/8][0] = mx;
+                                // mvss[dst_y/8][dst_x/8][1] = my;
+                                // mvss[dst_y/8][dst_x/8 + 1][0] = mx;
+                                // mvss[dst_y/8][dst_x/8 + 1][1] = my;
+                                // mvss[dst_y/8 + 1][dst_x/8][0] = mx;
+                                // mvss[dst_y/8 + 1][dst_x/8][1] = my;
+                                // mvss[dst_y/8 + 1][dst_x/8 + 1][0] = mx;
+                                // mvss[dst_y/8 + 1][dst_x/8 + 1][1] = my;
 
                                 int y, x, y_ref, x_ref;
                                 for (y = start_y, y_ref = dst_y; y < start_y + 16; y++, y_ref++) {
                                     for (x = start_x, x_ref = dst_x; x < start_x + 16; x++, x_ref++) {
                                         // Y
                                         interpolated_frame->data[0][y_ref * interpolated_frame->linesize[0] + x_ref]
-                                        = h->DPB[ref_frame_index].f->data[0][y * h->DPB[ref_frame_index].f->linesize[0] + x];
+                                        = pic->f->data[0][y * pic->f->linesize[0] + x];
                                         }
                                 }
                                 for (y = start_y/2, y_ref = dst_y/2; y < start_y/2 + (16/2); y++, y_ref++) {
                                     for (x = start_x/2, x_ref = dst_x/2; x < start_x/2 + (16/2); x++, x_ref++) {
                                         //Cb
                                         interpolated_frame->data[1][y_ref * interpolated_frame->linesize[1] + x_ref]
-                                        = h->DPB[ref_frame_index].f->data[1][y * h->DPB[ref_frame_index].f->linesize[1] + x];
+                                        = pic->f->data[1][y * pic->f->linesize[1] + x];
                                         
                                         //Cr
                                         interpolated_frame->data[2][y_ref * interpolated_frame->linesize[2] + x_ref]
-                                        = h->DPB[ref_frame_index].f->data[2][y * h->DPB[ref_frame_index].f->linesize[2] + x];
+                                        = pic->f->data[2][y * pic->f->linesize[2] + x];
                                     }
                                 }
                                 mbcount++;
@@ -1490,97 +1492,102 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
                     }
                 }
 
-                int dx[8] = {-1, -1, -1, 0,  0,  1, 1, 1};
-                int dy[8] = {-1,  1,  0, 1, -1, -1, 0, 1};
-                for (mb_y = 1; mb_y < h->mb_height * 2 - 1; mb_y++) {
-                    for (mb_x = 1; mb_x < h->mb_width * 2 - 1; mb_x++) {
+                // int dx[8] = {-1, -1, -1, 0,  0,  1, 1, 1};
+                // int dy[8] = {-1,  1,  0, 1, -1, -1, 0, 1};
+                // for (mb_y = 1; mb_y < h->mb_height * 2 - 1; mb_y++) {
+                //     for (mb_x = 1; mb_x < h->mb_width * 2 - 1; mb_x++) {
 
-                        if(!vis[mb_y][mb_x]) {
-                            vis[mb_y][mb_x] = 1;
-                            int c = 0, sumx = 0, sumy = 0;
+                //         if(!vis[mb_y][mb_x]) {
+                //             vis[mb_y][mb_x] = 1;
+                //             int c = 0, sumx = 0, sumy = 0;
 
-                            for(int k = 0; k < 8; k++){
-                                int mv_x = mvss[mb_y + dy[k]][mb_x + dx[k]][0];
-                                int mv_y = mvss[mb_y + dy[k]][mb_x + dx[k]][1];
-                                if(mv_x != 0 || mv_y != 0){
-                                    c++;
-                                    sumx -= mv_x;
-                                    sumy -= mv_y;
-                                }
-                            }
-                            if(c != 0) {
-                                sumx /= c;
-                                sumy /= c;
-                            }
-                            int ref_frame_index = DPB_map[(pic->frame_num == 0)?15:pic->frame_num - 1];
-                            int start_x = (mb_x) * 8;
-                            int start_y = (mb_y) * 8;
-                            int dst_x   = (mb_x + (sumx/2)/scale) * 8;
-                            int dst_y   = (mb_y + (sumy/2)/scale) * 8;
-                            if(start_x > (h->mb_width * 16) - 8 || start_x < 0) {
-                                start_x = mb_x * 8;
-                            }
-                            if(start_y > (h->mb_height * 16) - 8 || start_y < 0) {
-                                start_y = mb_y * 8;
-                            }
-                            if(dst_x > (h->mb_width * 16) - 8 || dst_x < 0) {
-                                dst_x = mb_x * 8;
-                            }
-                            if(dst_y > (h->mb_height * 16) - 8 || dst_y < 0) {
-                                dst_y = mb_y * 8;
-                            }
-                            printf("dst_x %d, dst_y %d\n", dst_x, dst_y);
-                            printf("start_x %d, start_y %d\n", start_x, start_y);
+                //             for(int k = 0; k < 8; k++){
+                //                 int mv_x = mvss[mb_y + dy[k]][mb_x + dx[k]][0];
+                //                 int mv_y = mvss[mb_y + dy[k]][mb_x + dx[k]][1];
+                //                 if(mv_x != 0 || mv_y != 0){
+                //                     c++;
+                //                     sumx -= mv_x;
+                //                     sumy -= mv_y;
+                //                 }
+                //             }
+                //             if(c != 0) {
+                //                 sumx /= c;
+                //                 sumy /= c;
+                //             }
+                //             int ref_frame_index = DPB_map[(pic->frame_num == 0)?15:pic->frame_num - 1];
+                //             int start_x = (mb_x) * 8;
+                //             int start_y = (mb_y) * 8;
+                //             int dst_x   = (mb_x + (sumx/2)/scale) * 8;
+                //             int dst_y   = (mb_y + (sumy/2)/scale) * 8;
+                //             if(start_x > (h->mb_width * 16) - 8 || start_x < 0) {
+                //                 start_x = mb_x * 8;
+                //             }
+                //             if(start_y > (h->mb_height * 16) - 8 || start_y < 0) {
+                //                 start_y = mb_y * 8;
+                //             }
+                //             if(dst_x > (h->mb_width * 16) - 8 || dst_x < 0) {
+                //                 dst_x = mb_x * 8;
+                //             }
+                //             if(dst_y > (h->mb_height * 16) - 8 || dst_y < 0) {
+                //                 dst_y = mb_y * 8;
+                //             }
+                //             printf("dst_x %d, dst_y %d\n", dst_x, dst_y);
+                //             printf("start_x %d, start_y %d\n", start_x, start_y);
 
-                            mvss[mb_y][mb_x][0] = (sumx/2)/scale;
-                            mvss[mb_y][mb_x][1] = (sumy/2)/scale;
+                //             mvss[mb_y][mb_x][0] = (sumx/2)/scale;
+                //             mvss[mb_y][mb_x][1] = (sumy/2)/scale;
 
-                            int y_, x_, y__ref, x__ref;
-                            for (y_ = start_y, y__ref = dst_y; y_ < start_y + 8; y_++, y__ref++) {
-                                for (x_ = start_x, x__ref = dst_x; x_ < start_x + 8; x_++, x__ref++) {
-                                    // Y
-                                    interpolated_frame->data[0][y_ * interpolated_frame->linesize[0] + x_]
-                                    = h->DPB[ref_frame_index].f->data[0][y__ref * h->DPB[ref_frame_index].f->linesize[0] + x__ref];
-                                    }
-                            }
-                            for (y_ = start_y/2, y__ref = dst_y/2; y_ < start_y/2 + (8/2); y_++, y__ref++) {
-                                for (x_ = start_x/2, x__ref = dst_x/2; x_ < start_x/2 + (8/2); x_++, x__ref++) {
-                                    //Cb
-                                    interpolated_frame->data[1][y_ * interpolated_frame->linesize[1] + x_]
-                                    = h->DPB[ref_frame_index].f->data[1][y__ref * h->DPB[ref_frame_index].f->linesize[1] + x__ref];
+                //             int y_, x_, y__ref, x__ref;
+                //             for (y_ = start_y, y__ref = dst_y; y_ < start_y + 8; y_++, y__ref++) {
+                //                 for (x_ = start_x, x__ref = dst_x; x_ < start_x + 8; x_++, x__ref++) {
+                //                     // Y
+                //                     interpolated_frame->data[0][y_ * interpolated_frame->linesize[0] + x_]
+                //                     = h->DPB[ref_frame_index].f->data[0][y__ref * h->DPB[ref_frame_index].f->linesize[0] + x__ref];
+                //                     }
+                //             }
+                //             for (y_ = start_y/2, y__ref = dst_y/2; y_ < start_y/2 + (8/2); y_++, y__ref++) {
+                //                 for (x_ = start_x/2, x__ref = dst_x/2; x_ < start_x/2 + (8/2); x_++, x__ref++) {
+                //                     //Cb
+                //                     interpolated_frame->data[1][y_ * interpolated_frame->linesize[1] + x_]
+                //                     = h->DPB[ref_frame_index].f->data[1][y__ref * h->DPB[ref_frame_index].f->linesize[1] + x__ref];
                                     
-                                    //Cr
-                                    interpolated_frame->data[2][y_ * interpolated_frame->linesize[2] + x_]
-                                    = h->DPB[ref_frame_index].f->data[2][y__ref * h->DPB[ref_frame_index].f->linesize[2] + x__ref];
-                                }
-                            }
-                        }
-                    }
-                }
+                //                     //Cr
+                //                     interpolated_frame->data[2][y_ * interpolated_frame->linesize[2] + x_]
+                //                     = h->DPB[ref_frame_index].f->data[2][y__ref * h->DPB[ref_frame_index].f->linesize[2] + x__ref];
+                //                 }
+                //             }
+                //         }
+                //     }
+                // }
+                 printf("KKKK save frame\n");
                 printf("mbcount = %d\n", mbcount);
-                save_frame_as_jpeg(avctx, interpolated_frame, 1 + 2 * h->next_output_pic->f->coded_picture_number);
+                save_frame_as_jpeg(avctx, interpolated_frame,  (2 * h->next_output_pic->f->coded_picture_number)-1);
 
             }
-
+             printf("KKKK finalize_frame\n");
             ret = finalize_frame(h, pict, h->next_output_pic, got_frame);
-
+             printf("KKKK finalize_frame finished\n");
             AVFrameSideData *sd;
-
+             
             sd = av_frame_get_side_data(pict, AV_FRAME_DATA_MOTION_VECTORS);
+            printf("KKKK side data\n");
             if(sd){
                 printf("side_data\n");
             } else {
                 printf("no_side_data\n");
             }
-            if (ret < 0)
+            if (ret < 0){
+                printf("ret < 0!!\n");
                 return ret;
+            }
+            printf("KKKK finished!!\n");
         }
     }
-
+    printf("KKKK before assert\n");
     av_assert0(pict->buf[0] || !*got_frame);
-
+    printf("KKKK after assert\n");
     ff_h264_unref_picture(h, &h->last_pic_for_ec);
-
+    printf("KKKK unref\n");
     return get_consumed_bytes(buf_index, buf_size);
 }
 
