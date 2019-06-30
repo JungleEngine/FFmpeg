@@ -454,6 +454,9 @@ enum AVCodecID {
     AV_CODEC_ID_RASC,
     AV_CODEC_ID_HYMT,
     AV_CODEC_ID_ARBC,
+    AV_CODEC_ID_AGM,
+    AV_CODEC_ID_LSCR,
+    AV_CODEC_ID_VP4,
 
     /* various PCM "codecs" */
     AV_CODEC_ID_FIRST_AUDIO = 0x10000,     ///< A dummy id pointing at the start of audio codecs
@@ -538,6 +541,7 @@ enum AVCodecID {
     AV_CODEC_ID_ADPCM_AICA,
     AV_CODEC_ID_ADPCM_IMA_DAT4,
     AV_CODEC_ID_ADPCM_MTAF,
+    AV_CODEC_ID_ADPCM_AGM,
 
     /* AMR */
     AV_CODEC_ID_AMR_NB = 0x12000,
@@ -677,6 +681,7 @@ enum AVCodecID {
     AV_CODEC_ID_ASS,
     AV_CODEC_ID_HDMV_TEXT_SUBTITLE,
     AV_CODEC_ID_TTML,
+    AV_CODEC_ID_ARIB_CAPTION,
 
     /* other specific kind of codecs (generally used for attachments) */
     AV_CODEC_ID_FIRST_UNKNOWN = 0x18000,           ///< A dummy ID pointing at the start of various fake codecs.
@@ -855,6 +860,11 @@ typedef struct RcOverride{
  * Use qpel MC.
  */
 #define AV_CODEC_FLAG_QPEL            (1 <<  4)
+/**
+ * Don't output frames whose parameters differ from first
+ * decoded frame in stream.
+ */
+#define AV_CODEC_FLAG_DROPCHANGED     (1 <<  5)
 /**
  * Use internal 2pass ratecontrol in first pass mode.
  */
@@ -2993,6 +3003,9 @@ typedef struct AVCodecContext {
 #define FF_PROFILE_PRORES_4444      4
 #define FF_PROFILE_PRORES_XQ        5
 
+#define FF_PROFILE_ARIB_PROFILE_A 0
+#define FF_PROFILE_ARIB_PROFILE_C 1
+
     /**
      * level
      * - encoding: Set by user.
@@ -4911,6 +4924,9 @@ int avcodec_send_packet(AVCodecContext *avctx, const AVPacket *avpkt);
  *      AVERROR_EOF:       the decoder has been fully flushed, and there will be
  *                         no more output frames
  *      AVERROR(EINVAL):   codec not opened, or it is an encoder
+ *      AVERROR_INPUT_CHANGED:   current decoded frame has changed parameters
+ *                               with respect to first decoded frame. Applicable
+ *                               when flag AV_CODEC_FLAG_DROPCHANGED is set.
  *      other negative values: legitimate decoding errors
  */
 int avcodec_receive_frame(AVCodecContext *avctx, AVFrame *frame);

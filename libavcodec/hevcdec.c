@@ -408,7 +408,17 @@ static enum AVPixelFormat get_format(HEVCContext *s, const HEVCSPS *sps)
         *fmt++ = AV_PIX_FMT_CUDA;
 #endif
         break;
+    case AV_PIX_FMT_YUV444P:
+#if CONFIG_HEVC_VDPAU_HWACCEL
+        *fmt++ = AV_PIX_FMT_VDPAU;
+#endif
+#if CONFIG_HEVC_NVDEC_HWACCEL
+        *fmt++ = AV_PIX_FMT_CUDA;
+#endif
+        break;
     case AV_PIX_FMT_YUV420P12:
+    case AV_PIX_FMT_YUV444P10:
+    case AV_PIX_FMT_YUV444P12:
 #if CONFIG_HEVC_NVDEC_HWACCEL
         *fmt++ = AV_PIX_FMT_CUDA;
 #endif
@@ -485,6 +495,11 @@ static int hls_slice_header(HEVCContext *s)
 
     // Coded parameters
     sh->first_slice_in_pic_flag = get_bits1(gb);
+    if (s->ref && sh->first_slice_in_pic_flag) {
+        av_log(s->avctx, AV_LOG_ERROR, "Two slices reporting being the first in the same frame.\n");
+        return 1; // This slice will be skiped later, do not corrupt state
+    }
+
     if ((IS_IDR(s) || IS_BLA(s)) && sh->first_slice_in_pic_flag) {
         s->seq_decode = (s->seq_decode + 1) & 0xff;
         s->max_ra     = INT_MAX;
@@ -2915,6 +2930,11 @@ static int decode_nal_unit(HEVCContext *s, const H2645NAL *nal)
         ret = hls_slice_header(s);
         if (ret < 0)
             return ret;
+        if (ret == 1) {
+            ret = AVERROR_INVALIDDATA;
+            goto fail;
+        }
+
 
         if (
             (s->avctx->skip_frame >= AVDISCARD_BIDIR && s->sh.slice_type == HEVC_SLICE_B) ||

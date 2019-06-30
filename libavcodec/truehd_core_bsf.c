@@ -21,7 +21,7 @@
 #include "avcodec.h"
 #include "bsf.h"
 #include "get_bits.h"
-#include "mlp_parser.h"
+#include "mlp_parse.h"
 #include "mlp.h"
 
 typedef struct AccessUnit {
@@ -117,6 +117,8 @@ static int truehd_core_filter(AVBSFContext *ctx, AVPacket *out)
         out->size -= reduce * 2;
         parity_nibble ^= out->size / 2;
 
+        if (out_size > 8)
+            AV_WN64(out->data + out_size - 8, 0);
         if (have_header) {
             memcpy(out->data + 4, in->data + 4, 28);
             out->data[16 + 4] = (out->data[16 + 4] & 0x0f) | (FFMIN(s->hdr.num_substreams, 3) << 4);
@@ -172,6 +174,12 @@ fail:
     return ret;
 }
 
+static void truehd_core_flush(AVBSFContext *ctx)
+{
+    TrueHDCoreContext *s = ctx->priv_data;
+    memset(&s->hdr, 0, sizeof(s->hdr));
+}
+
 static const enum AVCodecID codec_ids[] = {
     AV_CODEC_ID_TRUEHD, AV_CODEC_ID_NONE,
 };
@@ -180,5 +188,6 @@ const AVBitStreamFilter ff_truehd_core_bsf = {
     .name           = "truehd_core",
     .priv_data_size = sizeof(TrueHDCoreContext),
     .filter         = truehd_core_filter,
+    .flush          = truehd_core_flush,
     .codec_ids      = codec_ids,
 };

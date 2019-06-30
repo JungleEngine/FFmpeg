@@ -1705,6 +1705,27 @@ static const AVCodecDescriptor codec_descriptors[] = {
         .long_name = NULL_IF_CONFIG_SMALL("Gryphon's Anim Compressor"),
         .props     = AV_CODEC_PROP_LOSSY,
     },
+    {
+        .id        = AV_CODEC_ID_AGM,
+        .type      = AVMEDIA_TYPE_VIDEO,
+        .name      = "agm",
+        .long_name = NULL_IF_CONFIG_SMALL("Amuse Graphics Movie"),
+        .props     = AV_CODEC_PROP_LOSSY,
+    },
+    {
+        .id        = AV_CODEC_ID_LSCR,
+        .type      = AVMEDIA_TYPE_VIDEO,
+        .name      = "lscr",
+        .long_name = NULL_IF_CONFIG_SMALL("LEAD Screen Capture"),
+        .props     = AV_CODEC_PROP_LOSSY,
+    },
+    {
+        .id        = AV_CODEC_ID_VP4,
+        .type      = AVMEDIA_TYPE_VIDEO,
+        .name      = "vp4",
+        .long_name = NULL_IF_CONFIG_SMALL("On2 VP4"),
+        .props     = AV_CODEC_PROP_LOSSY,
+    },
 
     /* various PCM "codecs" */
     {
@@ -2246,6 +2267,13 @@ static const AVCodecDescriptor codec_descriptors[] = {
         .type      = AVMEDIA_TYPE_AUDIO,
         .name      = "adpcm_mtaf",
         .long_name = NULL_IF_CONFIG_SMALL("ADPCM MTAF"),
+        .props     = AV_CODEC_PROP_LOSSY,
+    },
+    {
+        .id        = AV_CODEC_ID_ADPCM_AGM,
+        .type      = AVMEDIA_TYPE_AUDIO,
+        .name      = "adpcm_agm",
+        .long_name = NULL_IF_CONFIG_SMALL("ADPCM AmuseGraphics Movie AGM"),
         .props     = AV_CODEC_PROP_LOSSY,
     },
 
@@ -3133,7 +3161,14 @@ static const AVCodecDescriptor codec_descriptors[] = {
         .long_name = NULL_IF_CONFIG_SMALL("Timed Text Markup Language"),
         .props     = AV_CODEC_PROP_TEXT_SUB,
     },
-
+    {
+        .id        = AV_CODEC_ID_ARIB_CAPTION,
+        .type      = AVMEDIA_TYPE_SUBTITLE,
+        .name      = "arib_caption",
+        .long_name = NULL_IF_CONFIG_SMALL("ARIB STD-B24 caption"),
+        .props     = AV_CODEC_PROP_TEXT_SUB,
+        .profiles  = NULL_IF_CONFIG_SMALL(ff_arib_caption_profiles),
+    },
 
     /* other kind of codecs and pseudo-codecs */
     {

@@ -719,7 +719,9 @@ unk_pixfmt:
     }
 
     if ((s->rgb && !s->lossless && !s->ls) ||
-        (!s->rgb && s->ls && s->nb_components > 1)) {
+        (!s->rgb && s->ls && s->nb_components > 1) ||
+        (s->avctx->pix_fmt == AV_PIX_FMT_PAL8 && !s->ls)
+    ) {
         av_log(s->avctx, AV_LOG_ERROR, "Unsupported coding and pixel format combination\n");
         return AVERROR_PATCHWELCOME;
     }
@@ -1903,6 +1905,7 @@ static int mjpeg_decode_app(MJpegDecodeContext *s)
         type   = get_bits(&s->gb, 8);
         len -= 4;
 
+        av_freep(&s->stereo3d);
         s->stereo3d = av_stereo3d_alloc();
         if (!s->stereo3d) {
             goto out;

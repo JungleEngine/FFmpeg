@@ -33,7 +33,7 @@
 /** 256 is arbitrary, but should be big enough for any reasonable file. */
 #define RPL_LINE_LENGTH 256
 
-static int rpl_probe(AVProbeData *p)
+static int rpl_probe(const AVProbeData *p)
 {
     if (memcmp(p->buf, RPL_SIGNATURE, RPL_SIGNATURE_SIZE))
         return 0;
@@ -210,10 +210,10 @@ static int rpl_read_header(AVFormatContext *s)
                     ast->codecpar->codec_id = AV_CODEC_ID_PCM_S16LE;
                     break;
                 } else if (ast->codecpar->bits_per_coded_sample == 8) {
-                    if(strstr(audio_type, "unsigned") != NULL) {
+                    if(av_strcasecmp(audio_type, "unsigned") >= 0) {
                         ast->codecpar->codec_id = AV_CODEC_ID_PCM_U8;
                         break;
-                    } else if(strstr(audio_type, "linear") != NULL) {
+                    } else if(av_strcasecmp(audio_type, "linear") >= 0) {
                         ast->codecpar->codec_id = AV_CODEC_ID_PCM_S8;
                         break;
                     } else {
