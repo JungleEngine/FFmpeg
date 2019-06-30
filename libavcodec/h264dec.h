@@ -555,6 +555,10 @@ typedef struct H264Context {
 
 extern const uint16_t ff_h264_mb_sizes[4];
 
+
+int save_frame_as_jpeg(AVCodecContext *pCodecCtx, AVFrame *pFrame, int FrameNo);
+
+
 /**
  * Reconstruct bitstream slice_type.
  */
@@ -767,7 +771,7 @@ static av_always_inline void write_back_motion_list(const H264Context *h,
     {
         int8_t *ref_index = &h->cur_pic.ref_index[list][b8_xy];
         int8_t *ref_cache = sl->ref_cache[list];
-        ref_index[0 + 0 * 2] = ref_cache[scan8[0]];
+        ref_index[0 + 0 * 2] = ref_cache[scan8[0]];;
         ref_index[1 + 0 * 2] = ref_cache[scan8[4]];
         ref_index[0 + 1 * 2] = ref_cache[scan8[8]];
         ref_index[1 + 1 * 2] = ref_cache[scan8[12]];
