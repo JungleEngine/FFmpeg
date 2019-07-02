@@ -551,6 +551,8 @@ typedef struct H264Context {
     AVBufferPool *motion_val_pool;
     AVBufferPool *ref_index_pool;
     int ref2frm[MAX_SLICES][2][64];     ///< reference to frame number lists, used in the loop filter, the first 2 are for -2,-1
+    AVFrame * following_interpolated_frame;
+    int next_vis[720 /16 * 2][1280 /16 * 2];
 } H264Context;
 
 extern const uint16_t ff_h264_mb_sizes[4];
