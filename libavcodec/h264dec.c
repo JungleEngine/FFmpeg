@@ -1658,37 +1658,37 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
                 }
 // /********FUTURE FRAME FILL HOLES************FUTURE FRAME FILL HOLES**********************/
 // /********FUTURE FRAME FILL HOLES************FUTURE FRAME FILL HOLES**********************/
-//                 if(h->following_interpolated_frame != NULL){
-//                     for (mb_y = 0; mb_y < h->mb_height * 16 ; mb_y++) {
-//                         for (mb_x = 0; mb_x < h->mb_width * 16; mb_x++) {
-//                             if( !vis[mb_y][mb_x] && h->next_vis[mb_y][mb_x] ) {
-//                                 vis[mb_y][mb_x]=1;
+                if(h->following_interpolated_frame != NULL){
+                    for (mb_y = 0; mb_y < h->mb_height * 16 ; mb_y++) {
+                        for (mb_x = 0; mb_x < h->mb_width * 16; mb_x++) {
+                            if( !vis[mb_y][mb_x] && h->next_vis[mb_y][mb_x] ) {
+                                vis[mb_y][mb_x]=1;
 
-//                                 interpolated_frame->data[0][mb_y * interpolated_frame->linesize[0] + mb_x]=
-//                                 interpolated_frame->data[0][mb_y * interpolated_frame->linesize[0] + mb_x]/2+
-//                                 h->following_interpolated_frame->data[0][mb_y * h->following_interpolated_frame->linesize[0] + mb_x]/2;
+                                interpolated_frame->data[0][mb_y * interpolated_frame->linesize[0] + mb_x]=
+                                interpolated_frame->data[0][mb_y * interpolated_frame->linesize[0] + mb_x]/2+
+                                h->following_interpolated_frame->data[0][mb_y * h->following_interpolated_frame->linesize[0] + mb_x]/2;
                                 
-//                                 //Cb
-//                                 interpolated_frame->data[1][(mb_y/2) * interpolated_frame->linesize[1] + mb_x/2]=
-//                                 interpolated_frame->data[1][(mb_y/2) * interpolated_frame->linesize[1] + mb_x/2]/2+
-//                                 h->following_interpolated_frame->data[1][(mb_y/2) * h->following_interpolated_frame->linesize[1] + mb_x/2]/2;
+                                //Cb
+                                interpolated_frame->data[1][(mb_y/2) * interpolated_frame->linesize[1] + mb_x/2]=
+                                interpolated_frame->data[1][(mb_y/2) * interpolated_frame->linesize[1] + mb_x/2]/2+
+                                h->following_interpolated_frame->data[1][(mb_y/2) * h->following_interpolated_frame->linesize[1] + mb_x/2]/2;
                                 
-//                                 //Cr
-//                                 interpolated_frame->data[2][(mb_y/2) * interpolated_frame->linesize[2] + mb_x/2]=
-//                                 interpolated_frame->data[2][(mb_y/2) * interpolated_frame->linesize[2] + mb_x/2]/2+
-//                                 h->following_interpolated_frame->data[2][(mb_y/2) * h->following_interpolated_frame->linesize[2] + mb_x/2]/2;
-//                             }
-//                         }
-//                     }
+                                //Cr
+                                interpolated_frame->data[2][(mb_y/2) * interpolated_frame->linesize[2] + mb_x/2]=
+                                interpolated_frame->data[2][(mb_y/2) * interpolated_frame->linesize[2] + mb_x/2]/2+
+                                h->following_interpolated_frame->data[2][(mb_y/2) * h->following_interpolated_frame->linesize[2] + mb_x/2]/2;
+                            }
+                        }
+                    }
 
-//                     if(h->next_vis != NULL){
-//                         for(int i =0;i <h->mb_height*16; i++){ 
-//                             free(h->next_vis[i]);     
-//                         }
-//                         free(h->next_vis);
-//                     }
-//                 }
-//                 h->next_vis = next_vis;
+                    if(h->next_vis != NULL){
+                        for(int i =0;i <h->mb_height*16; i++){ 
+                            free(h->next_vis[i]);     
+                        }
+                        free(h->next_vis);
+                    }
+                }
+                h->next_vis = next_vis;
 /****END*********END********END********END***********************************************/
                 int dx[8] = {-8, -8, -8, 0,  0,  8, 8, 8};
                 int dy[8] = {-8,  8,  8, 8, -8, -8, 0, 8};
