@@ -647,7 +647,7 @@ typedef struct AVFrame {
     AVBufferRef *private_ref;
 
     struct AVFrame* interpolated_frame;
-
+    int interpolate;
 } AVFrame;
 
 #if FF_API_FRAME_GET_SET

@@ -163,6 +163,8 @@ FF_ENABLE_DEPRECATION_WARNINGS
     frame->color_range         = AVCOL_RANGE_UNSPECIFIED;
     frame->chroma_location     = AVCHROMA_LOC_UNSPECIFIED;
     frame->flags               = 0;
+    frame->interpolated_frame  = NULL;
+    frame->interpolate         = 0;
 }
 
 static void free_side_data(AVFrameSideData **ptr_sd)
@@ -203,7 +205,11 @@ void av_frame_free(AVFrame **frame)
 {
     if (!frame || !*frame)
         return;
-
+    // if((*frame)->interpolated_frame!=NULL){
+    //     av_frame_unref((*frame)->interpolated_frame);
+    //     av_freep(&((*frame)->interpolated_frame));
+    //     (*frame)->interpolated_frame = NULL;
+    // }
     av_frame_unref(*frame);
     av_freep(frame);
 }
@@ -556,7 +562,30 @@ void av_frame_unref(AVFrame *frame)
 
     if (!frame)
         return;
+    if(frame->interpolated_frame != NULL){
+        wipe_side_data(frame->interpolated_frame);
 
+    for (i = 0; i < FF_ARRAY_ELEMS(frame->interpolated_frame->buf); i++)
+        av_buffer_unref(&frame->interpolated_frame->buf[i]);
+    for (i = 0; i < frame->interpolated_frame->nb_extended_buf; i++)
+        av_buffer_unref(&frame->interpolated_frame->extended_buf[i]);
+    av_freep(&frame->interpolated_frame->extended_buf);
+    av_dict_free(&frame->interpolated_frame->metadata);
+#if FF_API_FRAME_QP
+FF_DISABLE_DEPRECATION_WARNINGS
+    av_buffer_unref(&frame->interpolated_frame->qp_table_buf);
+FF_ENABLE_DEPRECATION_WARNINGS
+#endif
+
+    av_buffer_unref(&frame->interpolated_frame->hw_frames_ctx);
+
+    av_buffer_unref(&frame->interpolated_frame->opaque_ref);
+    av_buffer_unref(&frame->interpolated_frame->private_ref);
+
+    get_frame_defaults(frame->interpolated_frame);
+    av_freep(frame->interpolated_frame);
+    frame->interpolated_frame = NULL;
+    }
     wipe_side_data(frame);
 
     for (i = 0; i < FF_ARRAY_ELEMS(frame->buf); i++)
